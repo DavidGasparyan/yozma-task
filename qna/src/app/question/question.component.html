@@ -1,0 +1,14 @@
+<div>
+  <form [formGroup]="questionForm" (ngSubmit)="submitQuestion()">
+    <input formControlName="question" placeholder="Enter Question" />
+    <input formControlName="answer" placeholder="Enter Answer" />
+    <button type="submit">Save</button>
+  </form>
+
+  <div *ngFor="let question of questions">
+    <h3>{{ question.question }}</h3>
+    <p>{{ question.answer }}</p>
+    <button (click)="editQuestion(question)">Edit</button>
+    <button (click)="deleteQuestion(question.id)">Delete</button>
+  </div>
+</div>

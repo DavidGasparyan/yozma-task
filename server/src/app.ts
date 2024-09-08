@@ -5,6 +5,7 @@ import routes from "./config/routes";
 import cors from "cors";
 import {AppDataSource} from "./data-source";
 import dotenv from 'dotenv';
+import rateLimit from "express-rate-limit";
 
 dotenv.config();
 
@@ -13,6 +14,14 @@ AppDataSource.initialize()
     console.log("Data Source has been initialized!");
   })
   .catch((error) => console.log(error));
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: "Too many requests from this IP, please try again later.",
+});
 
 const app = express();
 const port = 8080;
@@ -23,6 +32,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
+app.use(apiLimiter);
 
 app.use(bodyParser.json());
 

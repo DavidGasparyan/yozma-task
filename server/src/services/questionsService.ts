@@ -1,35 +1,32 @@
-import {Question} from "../entity/Question.entity";
+import {Question} from "../entity/question.entity";
 import {AppDataSource} from "../data-source";
 
 export class QuestionsService {
+  static questionRepository = AppDataSource.getRepository(Question);
 
   static async getQuestions() {
-    const questionRepository = AppDataSource.getRepository(Question);
-    return await questionRepository.find();
+    return await this.questionRepository.find();
   }
 
   static async getQuestionById(id: number) {
-    const questionRepository = AppDataSource.getRepository(Question);
-    return await questionRepository.findOneBy({ id });
+    return await this.questionRepository.findOneBy({ id });
   }
 
   static async createQuestion(questionData: { question: string; answer: string }) {
-    const questionRepository = AppDataSource.getRepository(Question);
-    const newQuestion = questionRepository.create(questionData);
-    return await questionRepository.save(newQuestion);
+    const newQuestion = this.questionRepository.create(questionData);
+    return await this.questionRepository.save(newQuestion);
   }
 
   static async updateQuestion(id: number, questionData: { question: string; answer: string }) {
-    const questionRepository = AppDataSource.getRepository(Question);
-    await questionRepository.update(id, questionData);
-    return await questionRepository.findOneBy({ id });
+
+    await this.questionRepository.update(id, questionData);
+    return await this.questionRepository.findOneBy({ id });
   }
 
   static async deleteQuestion(id: number): Promise<Question> {
-    const questionRepository = AppDataSource.getRepository(Question);
-    const questionToRemove = await questionRepository.findOneBy({ id });
+    const questionToRemove = await this.questionRepository.findOneBy({ id });
     if (questionToRemove) {
-      await questionRepository.delete(questionToRemove);
+      await this.questionRepository.delete(questionToRemove);
     }
     return questionToRemove;
   }

@@ -1,14 +1,12 @@
 import {Request, Response} from 'express';
 import {QuestionsService} from '../services/questionsService';
 import {redisClient} from "../redis";
-import {Question} from "../entity/Question.entity";
+import {Question} from "../entity/question.entity";
 
 const QuestionsCtrl = {
   lockQuestion: async (req: Request, res: Response) => {
     const { id } = req.params;
     const userId: string = req.headers['x-user-id'] as string;
-
-    console.log(req.headers)
 
     if (!userId) {
       return res.status(400).send('UserId is required.');

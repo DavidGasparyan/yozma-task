@@ -1,19 +1,21 @@
-import {Component, OnChanges, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Question} from '../../interfaces/question.interface';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {QuestionService} from './question.service';
+import {switchMap, takeUntil} from 'rxjs/operators';
+import {of, Subject} from 'rxjs';
 
 @Component({
   selector: 'app-question',
   templateUrl: './question.component.html',
   styleUrls: ['./question.component.scss']
 })
-export class QuestionComponent implements OnInit {
+export class QuestionComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
 
   questionForm: FormGroup;
   questions: Question[] = [];
   editingQuestion: Question | null = null;
-  lockedQuestions: Set<number> = new Set();
 
   constructor(private fb: FormBuilder, private questionService: QuestionService) {
     this.questionForm = this.fb.group({
@@ -26,8 +28,15 @@ export class QuestionComponent implements OnInit {
     this.loadQuestions();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   loadQuestions(): void {
-    this.questionService.getQuestions().subscribe(
+    this.questionService.getQuestions()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(
       (questions: Question[]) => {
         this.questions = [...questions];
       },
@@ -37,41 +46,63 @@ export class QuestionComponent implements OnInit {
     );
   }
 
+  private updateQuestion(question: Question): void {
+    this.questionService.updateQuestion(this.editingQuestion.id, question)
+      .pipe(
+        takeUntil(this.destroy$),
+        switchMap((updatedQuestion: Question) => {
+          this.questionService.unlockQuestion(updatedQuestion.id);
+          return of(updatedQuestion);
+        })
+      )
+      .subscribe({
+        next: (updatedQuestion: Question) => {
+          this.questions = this.questions.map((q: Question) => (
+            q.id === updatedQuestion.id ? { ...updatedQuestion } as Question : q
+          ));
+          this.resetForm();
+        },
+        error: (err) => {
+          console.error('An error occurred while updating or unlocking the question:', err);
+        }
+      });
+  }
+
+  private createQuestion(question: Question): void {
+    this.questionService.createQuestion(question)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(
+        (newQuestion) => {
+          this.questions.push(newQuestion);
+          this.resetForm();
+          console.log(this.questions);
+        },
+        (error) => {
+          console.error('Error creating question', error);
+        }
+      );
+  }
+
   submitQuestion(): void {
-    const formValue = this.questionForm.value;
+    const question: Question = this.questionForm.value;
 
     if (this.questionForm.invalid) {
       return;
     }
 
     if (this.editingQuestion) {
-      this.questionService.updateQuestion(this.editingQuestion.id, formValue).subscribe(() => {
-        this.questionService.unlockQuestion(this.editingQuestion.id).subscribe(() => {
-          this.lockedQuestions.delete(this.editingQuestion?.id || 0);  // Remove lock
-        });
-        this.loadQuestions();
-        this.resetForm();
-      });
-
+      this.updateQuestion(question);
       return;
     }
 
-    this.questionService.createQuestion(formValue).subscribe(
-      (newQuestion) => {
-        this.questions.push(newQuestion);
-        this.resetForm();
-        console.log(this.questions);
-      },
-      (error) => {
-        console.error('Error creating question', error);
-      }
-    );
-
+    this.createQuestion(question);
     return;
   }
 
   editQuestion(question: Question): void {
-    this.questionService.lockQuestion(question.id).subscribe({
+    this.questionService.lockQuestion(question.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
       next: () => {
         console.log('Lock acquired, patching form with question:', question);
         this.questionForm.patchValue({
@@ -79,7 +110,6 @@ export class QuestionComponent implements OnInit {
           answer: question.answer,
         });
         this.editingQuestion = question;
-        this.lockedQuestions.add(question.id);  // Mark the question as locked
       },
       error: (err) => {
         if (err.status === 423) {
@@ -93,7 +123,9 @@ export class QuestionComponent implements OnInit {
   }
 
   deleteQuestion(id: number): void {
-    this.questionService.deleteQuestion(id).subscribe({
+    this.questionService.deleteQuestion(id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
       next: (question: Question) => {
         this.questions = this.questions.filter((q) => q.id !== question.id);
       },
@@ -111,6 +143,7 @@ export class QuestionComponent implements OnInit {
   resetForm(): void {
     if (this.editingQuestion) {
       this.questionService.unlockQuestion(this.editingQuestion.id)
+        .pipe(takeUntil(this.destroy$))
         .subscribe();
     }
     this.questionForm.reset();

@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import express from 'express';
 import bodyParser from 'body-parser';
-import { Pool } from 'pg';
 import routes from "./config/routes";
 import cors from "cors";
 import {AppDataSource} from "./data-source";
@@ -27,18 +26,7 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
-const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'postgres',
-  password: 'postgres',
-  // Use custom port
-  port: 5440,
-});
-
-app.set('pool', pool);
 app.use('/api', routes);
-
 app.use('/api', routes);
 
 app.listen(port, () => {

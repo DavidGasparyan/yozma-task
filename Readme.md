@@ -12,7 +12,7 @@ Ensure you have the following installed on your system:
 
 ## Project Setup
 
-### Step 1: Start Docker Services
+### Step 1: Start Docker Services and Server
 
 The backend is configured to run with PostgreSQL and Redis through Docker. First, ensure that Docker is installed and running, then start the PostgreSQL and Redis containers using Docker Compose.
 
@@ -28,4 +28,12 @@ npm run build
 npm run migration:run
 
 npm run start
+```
+
+### Step 2 Start Angular app
+
+The ui is configured with Angular app, to run the application navigate to qna folder and do
+
+```bash
+ npm run start
 ```

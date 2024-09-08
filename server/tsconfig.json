@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
-    "lib": ["es5", "es6", "dom"],
+    "lib": ["ESNext"],
     "module": "commonjs",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "target": "es5",
+    "target": "ES2015",
     "noImplicitAny": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
@@ -13,6 +13,7 @@
     "skipLibCheck": false,
     "outDir": "dist",
     "baseUrl": ".",
+    "forceConsistentCasingInFileNames": true,
     "paths": {
       "*": [
         "node_modules/*"
@@ -20,6 +21,9 @@
     }
   },
   "include": [
-    "src/**/*"
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }

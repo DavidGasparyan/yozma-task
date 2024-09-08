@@ -7,7 +7,8 @@ This project is a Node.js backend using Express, Redis, PostgreSQL, and TypeORM.
 Ensure you have the following installed on your system:
 
 - **Docker**: For containerizing PostgreSQL.
-- **Node.js** (v18 or higher) and **npm**: For running the backend.
+- **Node.js** (v18 or higher) and **npm**: For running the backend. 
+- **Angular** (v12 exactly) since its Angular 10 project.
 - **npm**: Package manager for managing dependencies.
 
 ## Project Setup
@@ -19,15 +20,15 @@ The backend is configured to run with PostgreSQL and Redis through Docker. First
 Navigate to the `server` directory and run:
 
 ```bash
-docker compose up -d
-
-npm install
-
-npm run build
-
-npm run migration:run
-
-npm run start
+    docker compose up -d
+    
+    npm install
+    
+    npm run build
+    
+    npm run migration:run
+    
+    npm run start
 ```
 
 ### Step 2 Start Angular app
@@ -35,5 +36,6 @@ npm run start
 The ui is configured with Angular app, to run the application navigate to qna folder and do
 
 ```bash
- npm run start
+    npm install
+    npm run start
 ```

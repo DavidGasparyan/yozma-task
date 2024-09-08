@@ -22,9 +22,18 @@ export class QuestionComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.questionService.getQuestions().subscribe((questions: Question[]) => {
-      this.questions = questions;
-    });
+    this.loadQuestions();
+  }
+
+  loadQuestions(): void {
+    this.questionService.getQuestions().subscribe(
+      (questions: Question[]) => {
+        this.questions = [...questions];
+      },
+      (error) => {
+        console.error('Error fetching questions', error);
+      }
+    );
   }
 
   submitQuestion(): boolean {
@@ -35,21 +44,30 @@ export class QuestionComponent implements OnInit {
     }
 
     if (this.editingQuestion) {
-      this.questionService.updateQuestion({
-        ...this.editingQuestion,
-        question: formValue.question,
-        answer: formValue.answer
-      });
-      this.editingQuestion = null;
+      this.questionService
+        .updateQuestion(this.editingQuestion.id, formValue)
+        .subscribe(
+          (updatedQuestion) => {
+            this.questions = this.questions.map((q) =>
+              q.id === updatedQuestion.id ? updatedQuestion : q
+            );
+            this.resetForm();
+          },
+          (error) => {
+            console.error('Error updating question', error);
+          }
+        );
     } else {
-      this.questionService.addQuestion({
-        id: 0,
-        question: formValue.question,
-        answer: formValue.answer
-      });
+      this.questionService.createQuestion(formValue).subscribe(
+        (newQuestion) => {
+          this.questions.push(newQuestion);
+          this.resetForm();
+        },
+        (error) => {
+          console.error('Error creating question', error);
+        }
+      );
     }
-    this.questionForm.reset();
-
 
     // Workaround for the form not resetting the form control values, its a bug on Angular 10
     return false;
@@ -60,10 +78,23 @@ export class QuestionComponent implements OnInit {
       question: question.question,
       answer: question.answer
     });
+
     this.editingQuestion = question;
   }
 
   deleteQuestion(id: number): void {
-    this.questionService.deleteQuestion(id);
+    this.questionService.deleteQuestion(id).subscribe(
+      () => {
+        this.questions = this.questions.filter((q) => q.id !== id);
+      },
+      (error) => {
+        console.error('Error deleting question', error);
+      }
+    );
+  }
+
+  resetForm(): void {
+    this.questionForm.reset();
+    this.editingQuestion = null;
   }
 }

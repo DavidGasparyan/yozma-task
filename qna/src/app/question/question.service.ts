@@ -1,33 +1,58 @@
 import { Injectable } from '@angular/core';
 import {Question} from '../../interfaces/question.interface';
-import {BehaviorSubject, Observable} from 'rxjs';
+import {BehaviorSubject, Observable, of} from 'rxjs';
+import {HttpClient, HttpErrorResponse} from '@angular/common/http';
+import {environment} from '../../environments/environment';
+import {catchError} from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class QuestionService {
-  private questionList: Question[] = [];
-  private questionSubject = new BehaviorSubject<Question[]>(this.questionList);
+  private API_URL = `${environment.API_URL}/questions`;
+
+  constructor(private http: HttpClient) {}
 
   getQuestions(): Observable<Question[]> {
-    return this.questionSubject.asObservable();
+    return this.http.get<Question[]>(this.API_URL).pipe(
+      catchError(this.handleError<Question[]>('getQuestions', []))
+    );
   }
 
-  addQuestion(question: Question): void {
-    this.questionList.push({ ...question, id: this.questionList.length + 1 });
-    this.questionSubject.next(this.questionList);
+  getQuestionById(id: number): Observable<Question> {
+    return this.http.get<Question>(`${this.API_URL}/${id}`).pipe(
+      catchError(this.handleError<Question>(`getQuestionById id=${id}`))
+    );
   }
 
-  updateQuestion(question: Question): void {
-    const index = this.questionList.findIndex(q => q.id === question.id);
-    if (index !== -1) {
-      this.questionList[index] = question;
-      this.questionSubject.next(this.questionList);
-    }
+  createQuestion(question: Question): Observable<Question> {
+    return this.http.post<Question>(this.API_URL, question).pipe(
+      catchError(this.handleError<Question>('createQuestion'))
+    );
   }
 
-  deleteQuestion(id: number): void {
-    this.questionList = this.questionList.filter(q => q.id !== id);
-    this.questionSubject.next(this.questionList);
+  updateQuestion(id: number, question: Question): Observable<Question> {
+    return this.http.put<Question>(`${this.API_URL}/${id}`, question).pipe(
+      catchError(this.handleError<Question>('updateQuestion'))
+    );
+  }
+
+  deleteQuestion(id: number): Observable<Question> {
+    return this.http.delete<Question>(`${this.API_URL}/${id}`).pipe(
+      catchError(this.handleError<Question>('deleteQuestion'))
+    );
+  }
+
+  private handleError<T>(operation = 'operation', result?: T): any {
+    return (error: HttpErrorResponse): Observable<T> => {
+      console.error(`${operation} failed: ${error.message}`); // Log error in the console
+      // You can handle the error differently based on the error type, for example:
+      if (error.status === 0) {
+        console.error('Network error occurred.');
+      } else {
+        console.error(`Backend returned code ${error.status}, body was: ${error.error}`);
+      }
+      return of(result as T);
+    };
   }
 }

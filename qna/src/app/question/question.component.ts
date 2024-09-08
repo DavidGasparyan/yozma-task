@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import {Question} from '../../interfaces/question.interface';
-import {FormBuilder, FormGroup} from '@angular/forms';
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {QuestionService} from './question.service';
 
 @Component({
@@ -16,8 +16,8 @@ export class QuestionComponent implements OnInit {
 
   constructor(private fb: FormBuilder, private questionService: QuestionService) {
     this.questionForm = this.fb.group({
-      question: [''],
-      answer: ['']
+      question: ['', Validators.required],
+      answer: ['', Validators.required],
     });
   }
 
@@ -27,8 +27,12 @@ export class QuestionComponent implements OnInit {
     });
   }
 
-  submitQuestion(): void {
+  submitQuestion(): boolean {
     const formValue = this.questionForm.value;
+
+    if (this.questionForm.invalid) {
+      return;
+    }
 
     if (this.editingQuestion) {
       this.questionService.updateQuestion({
@@ -45,6 +49,10 @@ export class QuestionComponent implements OnInit {
       });
     }
     this.questionForm.reset();
+
+
+    // Workaround for the form not resetting the form control values, its a bug on Angular 10
+    return false;
   }
 
   editQuestion(question: Question): void {

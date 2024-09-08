@@ -2,15 +2,19 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { QuestionComponent } from './question.component';
 import { QuestionService} from './question.service';
-import { ReactiveFormsModule } from '@angular/forms';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 
 
 
 @NgModule({
   declarations: [QuestionComponent],
   imports: [
+    FormsModule,
     ReactiveFormsModule,
     CommonModule
+  ],
+  exports: [
+    QuestionComponent
   ],
   providers: [QuestionService]
 })

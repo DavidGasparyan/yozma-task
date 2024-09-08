@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnChanges, OnInit} from '@angular/core';
 import {Question} from '../../interfaces/question.interface';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {QuestionService} from './question.service';
@@ -13,6 +13,7 @@ export class QuestionComponent implements OnInit {
   questionForm: FormGroup;
   questions: Question[] = [];
   editingQuestion: Question | null = null;
+  lockedQuestions: Set<number> = new Set();
 
   constructor(private fb: FormBuilder, private questionService: QuestionService) {
     this.questionForm = this.fb.group({
@@ -36,7 +37,7 @@ export class QuestionComponent implements OnInit {
     );
   }
 
-  submitQuestion(): boolean {
+  submitQuestion(): void {
     const formValue = this.questionForm.value;
 
     if (this.questionForm.invalid) {
@@ -44,56 +45,74 @@ export class QuestionComponent implements OnInit {
     }
 
     if (this.editingQuestion) {
-      this.questionService
-        .updateQuestion(this.editingQuestion.id, formValue)
-        .subscribe(
-          (updatedQuestion) => {
-            this.questions = this.questions.map((q) =>
-              q.id === updatedQuestion.id ? updatedQuestion : q
-            );
-            this.resetForm();
-          },
-          (error) => {
-            console.error('Error updating question', error);
-          }
-        );
-    } else {
-      this.questionService.createQuestion(formValue).subscribe(
-        (newQuestion) => {
-          this.questions.push(newQuestion);
-          this.resetForm();
-        },
-        (error) => {
-          console.error('Error creating question', error);
-        }
-      );
+      this.questionService.updateQuestion(this.editingQuestion.id, formValue).subscribe(() => {
+        this.questionService.unlockQuestion(this.editingQuestion.id).subscribe(() => {
+          this.lockedQuestions.delete(this.editingQuestion?.id || 0);  // Remove lock
+        });
+        this.loadQuestions();
+        this.resetForm();
+      });
+
+      return;
     }
 
-    // Workaround for the form not resetting the form control values, its a bug on Angular 10
-    return false;
+    this.questionService.createQuestion(formValue).subscribe(
+      (newQuestion) => {
+        this.questions.push(newQuestion);
+        this.resetForm();
+        console.log(this.questions);
+      },
+      (error) => {
+        console.error('Error creating question', error);
+      }
+    );
+
+    return;
   }
 
   editQuestion(question: Question): void {
-    this.questionForm.patchValue({
-      question: question.question,
-      answer: question.answer
+    this.questionService.lockQuestion(question.id).subscribe({
+      next: () => {
+        console.log('Lock acquired, patching form with question:', question);
+        this.questionForm.patchValue({
+          question: question.question,
+          answer: question.answer,
+        });
+        this.editingQuestion = question;
+        this.lockedQuestions.add(question.id);  // Mark the question as locked
+      },
+      error: (err) => {
+        if (err.status === 423) {
+          alert('This question is currently being edited by another user.');
+        } else {
+          console.error('An error occurred:', err);
+          alert('An error occurred while locking the question.');
+        }
+      }
     });
-
-    this.editingQuestion = question;
   }
 
   deleteQuestion(id: number): void {
-    this.questionService.deleteQuestion(id).subscribe(
-      () => {
-        this.questions = this.questions.filter((q) => q.id !== id);
+    this.questionService.deleteQuestion(id).subscribe({
+      next: (question: Question) => {
+        this.questions = this.questions.filter((q) => q.id !== question.id);
       },
-      (error) => {
-        console.error('Error deleting question', error);
+      error: (err) => {
+        if (err.status === 423) {
+          alert('This question is currently being edited by another user.');
+        } else {
+          console.error('An error occurred:', err);
+          alert('An error occurred while locking the question.');
+        }
       }
-    );
+    });
   }
 
   resetForm(): void {
+    if (this.editingQuestion) {
+      this.questionService.unlockQuestion(this.editingQuestion.id)
+        .subscribe();
+    }
     this.questionForm.reset();
     this.editingQuestion = null;
   }

@@ -6,6 +6,7 @@ import cors from "cors";
 import {AppDataSource} from "./data-source";
 import dotenv from 'dotenv';
 import rateLimit from "express-rate-limit";
+import {redisClient} from "./redis";
 
 dotenv.config();
 
@@ -23,6 +24,10 @@ const apiLimiter = rateLimit({
   message: "Too many requests from this IP, please try again later.",
 });
 
+redisClient.on('error', (err) => console.error('Redis Client Error', err));
+
+redisClient.connect();
+
 const app = express();
 const port = 8080;
 
@@ -30,7 +35,7 @@ const port = 8080;
 app.use(cors({
   origin: 'http://localhost:4200',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Id'],
 }));
 
 app.use(apiLimiter);

@@ -1,4 +1,3 @@
-import { getRepository } from 'typeorm';
 import {Question} from "../entity/Question.entity";
 import {AppDataSource} from "../data-source";
 
@@ -26,11 +25,11 @@ export class QuestionsService {
     return await questionRepository.findOneBy({ id });
   }
 
-  static async deleteQuestion(id: number) {
+  static async deleteQuestion(id: number): Promise<Question> {
     const questionRepository = AppDataSource.getRepository(Question);
     const questionToRemove = await questionRepository.findOneBy({ id });
     if (questionToRemove) {
-      await questionRepository.remove(questionToRemove);
+      await questionRepository.delete(questionToRemove);
     }
     return questionToRemove;
   }

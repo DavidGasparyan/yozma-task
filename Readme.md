@@ -37,3 +37,7 @@ The ui is configured with Angular app, to run the application navigate to qna fo
 ```bash
  npm run start
 ```
+
+### Step 3. Test question update lock
+
+Angular on init generates unique uuid, to test lock you need to open new browser or incognito tab and navigate to the same question, if you try to update the question you will see the error message.

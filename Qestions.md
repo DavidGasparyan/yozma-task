@@ -25,13 +25,13 @@ CREATE INDEX idx_users_created_at ON users (created_at);
 
 
 ### 2. Optimization
-For even faster search since we query multiple columns, if we query all the time all 4 columns together, then include other columns to index as well. ```sql
+For even faster search since we query multiple columns, if we query all the time all 4 columns together, then include other columns to index as well. Tradeoff will be a little more storage space to hold index.
 ```sql
 CREATE INDEX idx_users_created_at_covering ON users (created_at) INCLUDE (id, name, email);
 ```
 
 ### 3. Optimization
-In case table continues to grow for PostgreSQL we can utilize partitioning to keep records in separate partitions. For example hold each year data in a separate partition. I jsut chose a simple example to use partitioning by date range. We can also do partitioning by hash value. Depends what we need.
+In case table continues to grow for PostgreSQL we can utilize partitioning to keep records in separate partitions. For example hold each year data in a separate partition. I just chose a simple example to use partitioning by date range. We can also do partitioning by hash value. Depends on what we need.
 ```sql
 CREATE TABLE users_partitioned (
     id SERIAL,
